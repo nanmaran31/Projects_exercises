@@ -1,0 +1,82 @@
+library(worldfootballR)
+
+yr=2022
+league_url=fb_league_urls(country = "ENG", gender = "M", season_end_year = yr, tier = '1st')
+teams_urls=fb_teams_urls(league_url) #Returns the URLs for all teams for a given league
+
+#id=grep("Chelsea",teams_urls)
+id=grep("Manchester-City",teams_urls)
+match_results <- get_team_match_results(teams_urls[id])
+match_urls <- get_match_urls(country = "ENG", gender = "M", season_end_year = yr, tier="1st")
+#chels=grep("Chelsea",match_urls,value=T)
+mancity=grep("Manchester-City",match_urls,value=T)
+nmatches=length(mancity)
+tmpall=NULL
+#for(j in 1:length(chels))
+for(j in 19:nmatches)
+{
+
+#tmp=advanced_match_stats <- get_advanced_match_stats(match_url = chels[j], stat_type = availstat[1], team_or_player = "team")
+tmp=advanced_match_stats <- get_advanced_match_stats(match_url = mancity[j], stat_type = availstat[1], team_or_player = "team")
+#tmp$Date=as.Date(tmp$Match_Date,format="%a %b %d")
+tmp$Date=as.Date(tmp$Match_Date,format="%a %B %d, %Y")
+
+for(i in 2:length(availstat))
+{
+#x=advanced_match_stats <- get_advanced_match_stats(match_url = chels[j], stat_type = availstat[i], team_or_player = "team")
+x=advanced_match_stats <- get_advanced_match_stats(match_url = mancity[j], stat_type = availstat[i], team_or_player = "team")
+#x=x[x$Team=="Chelsea",]
+x=x[x$Team=="Manchester City",]
+nn=setdiff(names(x),names(tmp))
+tmp=cbind(tmp,x[,nn])
+}
+
+tmpall=rbind(tmpall,tmp)
+}
+tmpall$ID=as.character(tmpall$Date)
+match_results$ID=as.character(match_results$Date)
+res=merge(tmpall,match_results,by="ID",sort=F)
+a1=which(names(res)=="Home_Goals")
+a2=which(names(res)=="Away_Goals")
+nn1=c(a1,a2)
+res1=res[,-nn1]
+#fout=paste0("Chelsea_",yr,".txt")
+fout=paste0("Manchester-City_",yr,".txt")
+
+write.table(res1,file=fout,row.names=F,col.names=T,sep="\t",quote=F)
+
+}
+
+
+####################################### Combined the above data into one file
+
+#dat=read.table("Data_Chealsea_2018_2022.txt",header=T,stringsAsFactors=F,sep="\t")
+dat=read.table("Data_Chealsea_2018_2022.txt",header=T,stringsAsFactors=F,sep="\t")
+nn1=names(dat)
+years=c(2019,2020,2021,2022)
+
+yr=2018
+#fname=paste0("Chelsea_",yr,".txt")
+fname=paste0("Manchester-City_",yr,".txt")
+tmpall=read.table(fname,header=T,stringsAsFactors=F,sep="\t")
+#tmpall=tmpall[tmpall$Team.x=="Chelsea",]
+tmpall=tmpall[tmpall$Team.x=="Manchester City",]
+nn=c(2:7,20,21,22,23,27,40,50,83:90,151,152,153,167,173,175:180,188,189,191,192)
+#tmpall=tmpall[,-nn]
+tmpall$MatchYear=yr
+tmpall=tmpall[,nn1]
+for(yr in years)
+{
+fname=paste0("Manchester-City_",yr,".txt")
+#fname=paste0("Chelsea_",yr,".txt")
+res=read.table(fname,header=T,stringsAsFactors=F,sep="\t")
+#res=res[res$Team.x=="Chelsea",]
+res=res[res$Team.x=="Manchester City",]
+res$MatchYear=yr
+nn=intersect(names(tmpall),names(res))
+tmpall=rbind(tmpall,res[,nn])
+}
+
+#write.table(tmpall,file="Data_Chealsea_2018_2022.txt",row.names=F,col.names=T,sep="\t",quote=F)
+write.table(tmpall,file="Data_ManCity_2018_2022.txt",row.names=F,col.names=T,sep="\t",quote=F)
+
